@@ -22,7 +22,8 @@ def InfoList(request):
         data = request.data
         info = Info.objects.create(
             topic=data['topic'],
-            description=data['description']
+            description=data['description'],
+            photo=data['photo'],
         )
         serializer = InfoSerializer(info, many=False)
         return Response(serializer.data)
