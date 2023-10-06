@@ -11,7 +11,7 @@ def getRoutes(request):
         }
     ]
     return Response(routes)
-
+ 
 @api_view(['GET', 'POST'])
 def InfoList(request):
     if request.method == 'GET':
