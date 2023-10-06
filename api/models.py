@@ -4,7 +4,7 @@ from django.db import models
 
 class Info(models.Model):
 
-    topic = models.TextField()  #title 
+    topic = models.TextField()  #title a
     description = models.TextField()    #description of post
     created = models.DateTimeField(auto_now_add=True) #time 
     #photo link
