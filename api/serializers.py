@@ -1,5 +1,5 @@
 from rest_framework.serializers import ModelSerializer
-from .models import Info, Location, Profile
+from .models import Info, Profile
 
 class InfoSerializer(ModelSerializer):
     class Meta:
@@ -9,9 +9,4 @@ class InfoSerializer(ModelSerializer):
 class ProfileSerializer(ModelSerializer):
     class Meta:
         model = Profile
-        fields = '__all__' 
-
-class LocationSerializer(ModelSerializer):
-    class Meta:
-        model = Location
         fields = '__all__' 

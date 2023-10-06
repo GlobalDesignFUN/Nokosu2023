@@ -1,7 +1,7 @@
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from .serializers import InfoSerializer
-from .models import Info
+from .models import Info, Profile
 
 @api_view(['GET'])
 def getRoutes(request):
@@ -11,9 +11,12 @@ def getRoutes(request):
         }
     ]
     return Response(routes)
- 
+
 @api_view(['GET', 'POST'])
 def InfoList(request):
+    print(request.user.id)
+    currentUser=Profile.objects.get(user=request.user.id)
+    print(currentUser.user.username)
     if request.method == 'GET':
         infos = Info.objects.all()
         serializer = InfoSerializer(infos, many=True)
@@ -24,6 +27,15 @@ def InfoList(request):
             topic=data['topic'],
             description=data['description'],
             photo=data['photo'],
+            location=data['location'],
+            latitude=data['latitude'],
+            longitude=data['longitude'],
+            address=data['address'],
+            group=data['group'],
+            createdBy=currentUser,
+            emotion=data['emotion'],
+            cultural=data['cultural'],
+            physical=data['physical'],
         )
         serializer = InfoSerializer(info, many=False)
         return Response(serializer.data)
