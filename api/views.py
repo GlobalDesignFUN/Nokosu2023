@@ -1,4 +1,6 @@
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view #, authentication_classes, permission_classes
+# from rest_framework.authentication import SessionAuthentication, BasicAuthentication
+# from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from .serializers import InfoSerializer
 from .models import Info, Profile
@@ -12,37 +14,30 @@ def getRoutes(request):
     ]
     return Response(routes)
 
+# @authentication_classes([SessionAuthentication, BasicAuthentication])
+# @permission_classes([IsAuthenticated])
 @api_view(['GET', 'POST'])
 def InfoList(request):
-    print(request.user.id)
-    currentUser=Profile.objects.get(user=request.user.id)
-    print(currentUser.user.username)
     if request.method == 'GET':
         infos = Info.objects.all()
         serializer = InfoSerializer(infos, many=True)
         return Response(serializer.data)
     if request.method == 'POST':
-        data = request.data
-        info = Info.objects.create(
-            topic=data['topic'],
-            description=data['description'],
-            photo=data['photo'],
-            location=data['location'],
-            latitude=data['latitude'],
-            longitude=data['longitude'],
-            address=data['address'],
-            group=data['group'],
-            createdBy=currentUser,
-            emotion=data['emotion'],
-            cultural=data['cultural'],
-            physical=data['physical'],
-        )
-        serializer = InfoSerializer(info, many=False)
-        return Response(serializer.data)
+        serializer = InfoSerializer(data=request.data)
+        serializer.initial_data['createdBy'] = Profile.objects.get(user=request.user.id).id
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors)
 
+# @authentication_classes([SessionAuthentication, BasicAuthentication])
+# @permission_classes([IsAuthenticated])
 @api_view(['GET', 'PUT', 'DELETE'])
 def InfoItem(request, pk):
-    info = Info.objects.get(id=pk)
+    try:
+        info = Info.objects.get(id=pk)
+    except:
+        return Response({'Error':'Invalid Id'})
     if request.method == 'GET':
         serializer = InfoSerializer(info, many=False)
         return Response(serializer.data)
@@ -50,7 +45,8 @@ def InfoItem(request, pk):
         serializer = InfoSerializer(info, data=request.data)
         if serializer.is_valid():
             serializer.save()
-        return Response(serializer.data)
+            return Response(serializer.data)
+        return Response(serializer.errors)
     if request.method == 'DELETE':
         info.delete()
         return Response('Deleted')
