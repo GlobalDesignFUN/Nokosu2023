@@ -35,6 +35,19 @@ def registration(request):
             return Response({'token': token.key, 'ProfileErrors': profSerializer.errors})
         return Response(serializer.errors)
 
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def login(request):
+    if request.method == 'POST':
+        username = request.data.get('username')
+        password = request.data.get('password')
+        user = authenticate(username=username, password=password)
+        if user:
+            token, _ = Token.objects.get_or_create(user=user)
+            return Response({'token': token.key})
+        else:
+            return Response({'error': 'Invalid credentials'})
+
 @api_view(['GET', 'POST'])
 @permission_classes([IsAuthenticated])
 def InfoList(request):
