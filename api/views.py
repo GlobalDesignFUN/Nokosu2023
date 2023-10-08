@@ -47,6 +47,16 @@ def login(request):
             return Response({'token': token.key})
         else:
             return Response({'error': 'Invalid credentials'})
+        
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def logout(request):
+    print('a')
+    if request.method == 'POST':
+        print('b')
+        request.auth.delete()
+        print('c')
+        return Response({'message': 'Logout successful'})
 
 @api_view(['GET', 'POST'])
 @permission_classes([IsAuthenticated])

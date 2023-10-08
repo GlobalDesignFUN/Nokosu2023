@@ -7,4 +7,5 @@ urlpatterns = [
     path('infos/<str:pk>', views.InfoItem),
     path('user/register', views.registration),
     path('user/login', views.login),
+    path('user/logout', views.logout),
 ] 
