@@ -21,12 +21,13 @@ def registration(request):
     if request.method == 'POST':
         serializer = UserSerializer(data=request.data)
         if serializer.is_valid():
+            password1 = serializer.validated_data.get('password')
+            password2 = request.data.get('password2')
+            if password1 != password2:
+                return Response({'password2': 'Passwords do not match'})
             user = serializer.save()
             token, _ = Token.objects.get_or_create(user=user)
-            try:
-                profSerializer = ProfileSerializer(data={'user':user.id, 'photo': request.data['photo']})
-            except:
-                profSerializer = ProfileSerializer(data={'user':user.id, 'photo': ''})
+            profSerializer = ProfileSerializer(data={'user':user.id, 'photo': request.data.get('photo')})
             if profSerializer.is_valid():
                 profSerializer.save()
             else:
