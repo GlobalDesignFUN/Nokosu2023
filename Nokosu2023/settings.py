@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'api.apps.ApiConfig',
     #REST
     'rest_framework',
+    'rest_framework.authtoken',
     # Python Decouple app
     'decouple'
 ]

@@ -1,8 +1,9 @@
-from rest_framework.decorators import api_view #, authentication_classes, permission_classes
-# from rest_framework.authentication import SessionAuthentication, BasicAuthentication
-# from rest_framework.permissions import IsAuthenticated
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
-from .serializers import InfoSerializer
+from django.contrib.auth import authenticate, login, logout
+from .serializers import InfoSerializer, UserSerializer, ProfileSerializer
 from .models import Info, Profile
 
 @api_view(['GET'])
@@ -14,9 +15,27 @@ def getRoutes(request):
     ]
     return Response(routes)
 
-# @authentication_classes([SessionAuthentication, BasicAuthentication])
-# @permission_classes([IsAuthenticated])
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def registration(request):
+    if request.method == 'POST':
+        serializer = UserSerializer(data=request.data)
+        if serializer.is_valid():
+            user = serializer.save()
+            token, _ = Token.objects.get_or_create(user=user)
+            try:
+                profSerializer = ProfileSerializer(data={'user':user.id, 'photo': request.data['photo']})
+            except:
+                profSerializer = ProfileSerializer(data={'user':user.id, 'photo': ''})
+            if profSerializer.is_valid():
+                profSerializer.save()
+            else:
+                Profile.objects.create(user=user)
+            return Response({'token': token.key, 'ProfileErrors': profSerializer.errors})
+        return Response(serializer.errors)
+
 @api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
 def InfoList(request):
     if request.method == 'GET':
         infos = Info.objects.all()
@@ -30,9 +49,8 @@ def InfoList(request):
             return Response(serializer.data)
         return Response(serializer.errors)
 
-# @authentication_classes([SessionAuthentication, BasicAuthentication])
-# @permission_classes([IsAuthenticated])
 @api_view(['GET', 'PUT', 'DELETE'])
+@permission_classes([IsAuthenticated])
 def InfoItem(request, pk):
     try:
         info = Info.objects.get(id=pk)
