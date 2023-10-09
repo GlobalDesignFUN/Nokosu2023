@@ -1,10 +1,10 @@
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
 from django.contrib.auth import authenticate, login, logout
 from .serializers import InfoSerializer, UserSerializer, ProfileSerializer
-from .models import Info, Profile
+from .models import Info, Profile, User
 
 @api_view(['GET'])
 def getRoutes(request):
@@ -27,13 +27,50 @@ def registration(request):
                 return Response({'password2': 'Passwords do not match'})
             user = serializer.save()
             token, _ = Token.objects.get_or_create(user=user)
-            profSerializer = ProfileSerializer(data={'user':user.id, 'photo': request.data.get('photo')})
-            if profSerializer.is_valid():
-                profSerializer.save()
+            profileSerializer = ProfileSerializer(data={'user':user.id, 'photo': request.data.get('photo')})
+            if profileSerializer.is_valid():
+                profileSerializer.save()
             else:
                 Profile.objects.create(user=user)
-            return Response({'token': token.key, 'ProfileErrors': profSerializer.errors})
+            profileSerializer_data = ProfileSerializer(Profile.objects.get(user=user.id), many=False).data
+            profileSerializer_data['user'] = UserSerializer(user, many=False).data
+            profileSerializer_data['errors'] = profileSerializer.errors
+            return Response({'token': token.key, 'profile':profileSerializer_data})
         return Response(serializer.errors)
+    
+@api_view(['GET', 'PUT', 'DELETE'])
+@permission_classes([IsAuthenticated])
+def profile(request, pk):
+    try:
+        profile = Profile.objects.get(user=pk)
+    except:
+        return Response({'Error':'Invalid Id'})
+    
+    if not (request.user.is_staff or profile.id==pk):
+        return Response({'detail': 'You do not have permission to perform this action.'})
+    
+    if request.method == 'GET':
+        profileSerializer_data = ProfileSerializer(profile, many=False).data
+        profileSerializer_data['user'] = UserSerializer(profile.user, many=False).data
+        return Response(profileSerializer_data)
+    
+    if request.method == 'PUT':
+        return Response('PUT')
+    if request.method == 'DELETE':
+        profile.delete()
+        return Response({'detail': 'Deleted successful'})
+    
+@api_view(['GET'])
+@permission_classes([IsAdminUser])
+def profileList():
+    profiles = Profile.objects.all()
+    profSerializer = ProfileSerializer(profiles, many=True)
+    profile_list = []
+    for profile in profSerializer.data:
+        user = User.objects.get(id=profile['user'])
+        profile['user'] = UserSerializer(user, many=False).data
+        profile_list.append(profile)
+    return Response(profile_list)
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -44,19 +81,18 @@ def login(request):
         user = authenticate(username=username, password=password)
         if user:
             token, _ = Token.objects.get_or_create(user=user)
-            return Response({'token': token.key})
+            profileSerializer_data = ProfileSerializer(Profile.objects.get(user=user.id), many=False).data
+            profileSerializer_data['user'] = UserSerializer(user, many=False).data
+            return Response({'token': token.key, 'profile':profileSerializer_data})
         else:
             return Response({'error': 'Invalid credentials'})
         
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def logout(request):
-    print('a')
     if request.method == 'POST':
-        print('b')
         request.auth.delete()
-        print('c')
-        return Response({'message': 'Logout successful'})
+        return Response({'detail': 'Logout successful'})
 
 @api_view(['GET', 'POST'])
 @permission_classes([IsAuthenticated])
@@ -91,4 +127,4 @@ def InfoItem(request, pk):
         return Response(serializer.errors)
     if request.method == 'DELETE':
         info.delete()
-        return Response('Deleted')
+        return Response({'detail': 'Deleted the info with id:{}'.format(pk)})

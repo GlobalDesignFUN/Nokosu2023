@@ -3,11 +3,11 @@ from django.contrib.auth.models import User
 
 # Create your models here.
 class Profile(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
-    photo = models.ImageField(upload_to='static\img\profile_pics', blank=True, null=True)
+    user = models.OneToOneField(User, on_delete=models.SET_NULL, null=True)
+    photo = models.ImageField(upload_to='static\img\profile_pics', default='static\img\profile_pics\default.png')
 
     def __str__(self):
-        return self.user.username
+        return self.user.username if self.user else 'User Not Found'        
 
 class Info(models.Model):
     topic = models.TextField()
