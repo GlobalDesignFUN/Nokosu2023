@@ -11,7 +11,7 @@ from .models import Info, Profile, User, Default_Profile_Image
 def getRoutes(request):
     routes = [
         {
-            'Endpoint' : 'List of endpoint details'
+            'Global Design 2023' : 'Welcome to NOKOSU backend'
         }
     ]
     return Response(routes)
