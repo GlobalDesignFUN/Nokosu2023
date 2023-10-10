@@ -2,9 +2,10 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
+from rest_framework import status
 from django.contrib.auth import authenticate, login, logout
 from .serializers import InfoSerializer, UserSerializer, ProfileSerializer
-from .models import Info, Profile, User
+from .models import Info, Profile, User, Default_Profile_Image
 
 @api_view(['GET'])
 def getRoutes(request):
@@ -36,41 +37,61 @@ def registration(request):
             profileSerializer_data['user'] = UserSerializer(user, many=False).data
             profileSerializer_data['errors'] = profileSerializer.errors
             return Response({'token': token.key, 'profile':profileSerializer_data})
-        return Response(serializer.errors)
-    
-@api_view(['GET', 'PUT', 'DELETE'])
-@permission_classes([IsAuthenticated])
-def profile(request, pk):
-    try:
-        profile = Profile.objects.get(user=pk)
-    except:
-        return Response({'Error':'Invalid Id'})
-    
-    if not (request.user.is_staff or profile.id==pk):
-        return Response({'detail': 'You do not have permission to perform this action.'})
-    
-    if request.method == 'GET':
-        profileSerializer_data = ProfileSerializer(profile, many=False).data
-        profileSerializer_data['user'] = UserSerializer(profile.user, many=False).data
-        return Response(profileSerializer_data)
-    
-    if request.method == 'PUT':
-        return Response('PUT')
-    if request.method == 'DELETE':
-        profile.delete()
-        return Response({'detail': 'Deleted successful'})
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 @api_view(['GET'])
 @permission_classes([IsAdminUser])
-def profileList():
+def profileList(_):
     profiles = Profile.objects.all()
     profSerializer = ProfileSerializer(profiles, many=True)
     profile_list = []
     for profile in profSerializer.data:
-        user = User.objects.get(id=profile['user'])
-        profile['user'] = UserSerializer(user, many=False).data
+        if profile['user']:
+            profile['user'] = UserSerializer(User.objects.get(id=profile['user']), many=False).data
         profile_list.append(profile)
     return Response(profile_list)
+
+@api_view(['GET', 'PUT', 'DELETE'])
+@permission_classes([IsAuthenticated])
+def profile(request, pk):
+    try:
+        profile = Profile.objects.get(id=pk)
+    except:
+        return Response({'error':'Invalid Profile Id'}, status=status.HTTP_404_NOT_FOUND)
+    
+    if request.method == 'GET':
+        profileSerializer_data = ProfileSerializer(profile, many=False).data
+        if profile.user:
+            profileSerializer_data['user'] = UserSerializer(profile.user, many=False).data
+        return Response(profileSerializer_data)
+    
+    if not (request.user.is_staff or profile.id==pk):
+        return Response({'detail': 'You do not have permission to perform this action.'}, status=status.HTTP_401_UNAUTHORIZED)
+    
+    if request.method == 'PUT':
+        userSerializer = UserSerializer(profile.user, data=request.data)
+        profileSerializer = ProfileSerializer(profile, data={'photo': request.data.get('photo')})
+        isProfileValid = profileSerializer.is_valid()
+        if userSerializer.is_valid():
+            userSerializer.save()
+            if isProfileValid:
+                profile.photo.delete()
+                profile.photo = profileSerializer.validated_data.get('photo')
+                profile.save()
+            profileSerializer_data = ProfileSerializer(profile, many=False).data
+            profileSerializer_data['user'] = UserSerializer(profile.user, many=False).data
+            profileSerializer_data['errors'] = profileSerializer.errors
+            return Response(profileSerializer_data)
+        return Response(userSerializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    if request.method == 'DELETE':
+        if profile.user:
+            profile.user.delete()
+        if profile.photo != Default_Profile_Image:
+            profile.photo.delete()
+            profile.photo = Default_Profile_Image
+            profile.save()
+        return Response({'detail': 'Deleted successful'})
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -85,7 +106,7 @@ def login(request):
             profileSerializer_data['user'] = UserSerializer(user, many=False).data
             return Response({'token': token.key, 'profile':profileSerializer_data})
         else:
-            return Response({'error': 'Invalid credentials'})
+            return Response({'error': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
         
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
@@ -101,13 +122,14 @@ def InfoList(request):
         infos = Info.objects.all()
         serializer = InfoSerializer(infos, many=True)
         return Response(serializer.data)
+    
     if request.method == 'POST':
         serializer = InfoSerializer(data=request.data)
         serializer.initial_data['createdBy'] = Profile.objects.get(user=request.user.id).id
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
-        return Response(serializer.errors)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['GET', 'PUT', 'DELETE'])
 @permission_classes([IsAuthenticated])
@@ -115,16 +137,20 @@ def InfoItem(request, pk):
     try:
         info = Info.objects.get(id=pk)
     except:
-        return Response({'Error':'Invalid Id'})
+        return Response({'error':'Invalid Info Id'}, status=status.HTTP_404_NOT_FOUND)
+    
     if request.method == 'GET':
         serializer = InfoSerializer(info, many=False)
         return Response(serializer.data)
+    
     if request.method == 'PUT':
         serializer = InfoSerializer(info, data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
-        return Response(serializer.errors)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
     if request.method == 'DELETE':
+        info.photo.delete()
         info.delete()
         return Response({'detail': 'Deleted the info with id:{}'.format(pk)})

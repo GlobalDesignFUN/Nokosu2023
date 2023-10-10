@@ -40,7 +40,6 @@ class UserSerializer(ModelSerializer):
     
     def update(self, user, validated_data):
         user.username = validated_data['username']
-        user.password = validated_data['password']
         user.email = validated_data['email']
         user.first_name = validated_data['first_name']
         user.last_name = validated_data['last_name']

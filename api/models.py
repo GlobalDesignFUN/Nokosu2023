@@ -1,23 +1,24 @@
 from django.db import models
 from django.contrib.auth.models import User
 
+Default_Profile_Image = 'static\img\profile_pics\default.png'
+
 # Create your models here.
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.SET_NULL, null=True)
-    photo = models.ImageField(upload_to='static\img\profile_pics', default='static\img\profile_pics\default.png')
+    photo = models.ImageField(upload_to='static\img\profile_pics', default=Default_Profile_Image)
 
     def __str__(self):
-        return self.user.username if self.user else 'User Not Found'        
+        return '{}_{}'.format(self.id,self.user.username) if self.user else 'User Not Found'        
 
 class Info(models.Model):
     topic = models.TextField()
     description = models.TextField()
     created = models.DateTimeField(auto_now_add=True)
-    photo = models.ImageField(upload_to='static\img\info', blank=True, null=True)
+    photo = models.ImageField(upload_to='static\img\info', blank=False, null=False)
     group = models.TextField()
     createdBy = models.ForeignKey(Profile, on_delete=models.CASCADE,null=False)
-    # 感情のカテゴリ 一番最初：感情（True = positive, False = negative） 2つ目:文化的 (True= 文化的, false = 文化的でない) 3つ目：フィジカル(True= フィジカルである, False = フィジカルでない)
-    # Category for emotion 1st emotional(True = positive) and 2nd cultural, 3rd physical  
+    # Category data 
     emotion = models.BooleanField()
     cultural = models.BooleanField()
     physical = models.BooleanField()
@@ -28,7 +29,7 @@ class Info(models.Model):
     address = models.TextField()
 
     def __str__(self):
-        return self.topic
+        return '{}_{}'.format(self.id, self.topic)
     
     class Meta:
         ordering = ['-created']
