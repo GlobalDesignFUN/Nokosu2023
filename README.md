@@ -3,7 +3,7 @@ The improved version of Nokosu which can be used as tool for KJ method
 
 
 
-## For Render Deployement
+## For Render Deployement with downgraded python 3.7.10
 # requirement.txt
 asgiref==3.7.2
 Django
