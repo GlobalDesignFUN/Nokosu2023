@@ -3,15 +3,105 @@ from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
 from rest_framework import status
-from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth import authenticate
+from django.shortcuts import redirect
 from .serializers import InfoSerializer, UserSerializer, ProfileSerializer
 from .models import Info, Profile, User, Default_Profile_Image
+
+def redirectbase(_):
+    return redirect(getRoutes)
 
 @api_view(['GET'])
 def getRoutes(request):
     routes = [
         {
             'Global Design 2023' : 'Welcome to NOKOSU backend'
+        },
+        {
+            'API Endpoints' : [
+                {
+                    'Info':[
+                        {
+                            'Description' : 'Get a List of all Info objects',
+                            'Method' : 'GET',
+                            'URL' : '/api/infos/',
+                        },
+                        {
+                            'Description' : 'Create an Info object',
+                            'Method' : 'POST',
+                            'URL' : '/api/infos/',
+                        },
+                        {
+                            'Description' : 'Get a single Info object with given id',
+                            'Method' : 'GET',
+                            'URL' : '/api/infos/0',
+                        },
+                        {
+                            'Description' : 'Update an Info object with given id',
+                            'Method' : 'PUT',
+                            'URL' : '/api/infos/0',
+                        },
+                        {
+                            'Description' : 'Delete an Info object with given id',
+                            'Method' : 'DELETE',
+                            'URL' : '/api/infos/0',
+                        },
+                    ]
+                },
+                {
+                    'Profile':[
+                        {
+                            'Description' : 'Get a List of all User Profile objects',
+                            'Method' : 'GET',
+                            'URL' : '/api/profiles/',
+                        },
+                        {
+                            'Description' : 'Get a single User Profile object with given id',
+                            'Method' : 'GET',
+                            'URL' : '/api/profiles/0',
+                        },
+                        {
+                            'Description' : 'Update a User Profile object with given id',
+                            'Method' : 'PUT',
+                            'URL' : '/api/profiles/0',
+                        },
+                        {
+                            'Description' : 'Delete a User object with given id',
+                            'Method' : 'DELETE',
+                            'URL' : '/api/profiles/0',
+                        },
+                    ]
+                },
+                {
+                    'User':[
+                        {
+                            'Description' : 'Create a User Profile and return access token',
+                            'Method' : 'POST',
+                            'URL' : 'users/register/',
+                        },
+                        {
+                            'Description' : 'Return access token',
+                            'Method' : 'POST',
+                            'URL' : 'users/login',
+                        },
+                        {
+                            'Description' : 'Delete access token',
+                            'Method' : 'POST',
+                            'URL' : 'users/logout',
+                        },
+                    ]
+                },
+            ]
+        },
+        {
+            'Web Templates' : [
+                {
+                    'Admin Site': '/admin/'
+                },
+                {
+                    'Password reset view': 'Under construction'
+                },
+            ]
         }
     ]
     return Response(routes)
