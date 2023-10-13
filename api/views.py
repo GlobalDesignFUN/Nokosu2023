@@ -77,17 +77,17 @@ def getRoutes(request):
                         {
                             'Description' : 'Create a User Profile and return access token',
                             'Method' : 'POST',
-                            'URL' : 'users/register/',
+                            'URL' : '/api/users/register/',
                         },
                         {
                             'Description' : 'Return access token',
                             'Method' : 'POST',
-                            'URL' : 'users/login',
+                            'URL' : '/api/users/login',
                         },
                         {
                             'Description' : 'Delete access token',
                             'Method' : 'POST',
-                            'URL' : 'users/logout',
+                            'URL' : '/api/users/logout',
                         },
                     ]
                 },
