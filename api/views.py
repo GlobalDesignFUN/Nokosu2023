@@ -4,15 +4,39 @@ from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
 from rest_framework import status
 from django.contrib.auth import authenticate
-from django.shortcuts import redirect
+from django.shortcuts import redirect, render
 from .serializers import InfoSerializer, UserSerializer, ProfileSerializer
 from .models import Info, Profile, User, Default_Profile_Image
+from .forms import PasswordForm
+import requests
 
 def redirectbase(_):
     return redirect(getRoutes)
 
+def passwordReset(request, token):
+    if request.method == 'POST':
+        form = PasswordForm(request.POST)
+        reset_password_url = "{}://{}/api/password_reset/confirm/".format(request.scheme, request.get_host())
+        data = {"password": request.POST.get('password'), "token": token}
+        try:
+            response = requests.post(reset_password_url, json=data)
+            print(response.status_code)
+            if response.status_code == 200:
+                return render(request, 'api/password_reset_response.html', {'status':200})
+            if response.status_code == 400:
+                form.errors['password'] = response.json()['password']
+                return render(request, 'api/password_reset_form.html', {'form': form})
+            if response.status_code == 404:
+                return render(request, 'api/password_reset_response.html', {'status':404})
+        except Exception as e:
+            return render(request, 'api/password_reset_response.html', {'error':e})
+
+    if request.method == 'GET':
+        form = PasswordForm(initial={'token': token})
+        return render(request, 'api/password_reset_form.html', {'form': form})
+
 @api_view(['GET'])
-def getRoutes(request):
+def getRoutes(_):
     routes = [
         {
             'Global Design 2023' : 'Welcome to NOKOSU backend'
@@ -77,17 +101,31 @@ def getRoutes(request):
                         {
                             'Description' : 'Create a User Profile and return access token',
                             'Method' : 'POST',
-                            'URL' : 'users/register/',
+                            'URL' : '/api/users/register/',
                         },
                         {
                             'Description' : 'Return access token',
                             'Method' : 'POST',
-                            'URL' : 'users/login',
+                            'URL' : '/api/users/login',
                         },
                         {
                             'Description' : 'Delete access token',
                             'Method' : 'POST',
-                            'URL' : 'users/logout',
+                            'URL' : '/api/users/logout',
+                        },
+                    ]
+                },
+                {
+                    'email':[
+                        {
+                            'Description' : 'Getting a password reset email with the token',
+                            'Method' : 'POST',
+                            'URL' : '/api/password_reset/',
+                        },
+                        {
+                            'Description' : 'Updating the password with token',
+                            'Method' : 'POST',
+                            'URL' : '/api/password_reset/confirm/',
                         },
                     ]
                 },
@@ -155,11 +193,12 @@ def profile(request, pk):
             profileSerializer_data['user'] = UserSerializer(profile.user, many=False).data
         return Response(profileSerializer_data)
     
-    if not (request.user.is_staff or profile.id==pk):
+    if not (request.user.is_staff or (Profile.objects.get(user=request.user).id==profile.id)):
         return Response({'detail': 'You do not have permission to perform this action.'}, status=status.HTTP_401_UNAUTHORIZED)
     
     if request.method == 'PUT':
         userSerializer = UserSerializer(profile.user, data=request.data)
+        userSerializer.initial_data['password'] = 'temp' # Ignored by the update() of serializer
         profileSerializer = ProfileSerializer(profile, data={'photo': request.data.get('photo')})
         isProfileValid = profileSerializer.is_valid()
         if userSerializer.is_valid():
