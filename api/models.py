@@ -19,6 +19,7 @@ class Info(models.Model):
     group = models.TextField()
     createdBy = models.ForeignKey(Profile, on_delete=models.CASCADE,null=False)
     # Category data 
+    positive = models.BooleanField()
     emotion = models.BooleanField()
     cultural = models.BooleanField()
     physical = models.BooleanField()

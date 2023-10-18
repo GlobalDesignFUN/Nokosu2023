@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import path, include
 from . import views
 
 urlpatterns = [
@@ -10,4 +10,5 @@ urlpatterns = [
     path('users/logout', views.logout),
     path('profiles/<str:pk>', views.profile),
     path('profiles/', views.profileList),
+    path('password_reset/', include('django_rest_passwordreset.urls', namespace='password_reset')),
 ] 

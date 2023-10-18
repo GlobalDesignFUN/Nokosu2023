@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     #REST
     'rest_framework',
     'rest_framework.authtoken',
+    'django_rest_passwordreset',
     # Python Decouple app
     'decouple'
 ]
@@ -78,7 +79,7 @@ ROOT_URLCONF = 'Nokosu2023.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, 'templates/')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
