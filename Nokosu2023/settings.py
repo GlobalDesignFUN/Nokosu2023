@@ -106,7 +106,7 @@ DATABASES = {
     }
 }
 
-DATABASES["default"] = dj_database_url.parse("postgres://globaldesign2023database_user:ybxtGko8mv4YvZJV9FGC05jMYdIW6htz@dpg-cknpacm1101c738hlo20-a.oregon-postgres.render.com/globaldesign2023database")
+DATABASES["default"] = dj_database_url.parse(config('DB'))
 
 
 # Password validation
