@@ -137,7 +137,7 @@ def getRoutes(_):
                     'Admin Site': '/admin/'
                 },
                 {
-                    'Password reset view': 'Under construction'
+                    'Password reset form': '/password/token'
                 },
             ]
         }

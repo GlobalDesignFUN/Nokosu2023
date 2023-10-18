@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
 import os
+import dj_database_url
 from decouple import config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -104,6 +105,8 @@ DATABASES = {
         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
     }
 }
+
+DATABASES["default"] = dj_database_url.parse("postgres://globaldesign2023database_user:ybxtGko8mv4YvZJV9FGC05jMYdIW6htz@dpg-cknpacm1101c738hlo20-a.oregon-postgres.render.com/globaldesign2023database")
 
 
 # Password validation
