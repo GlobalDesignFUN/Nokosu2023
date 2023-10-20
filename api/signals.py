@@ -19,8 +19,6 @@ def password_reset_token_created(sender, instance, reset_password_token, *args, 
             reset_password_token.key),
     }
 
-    print(context)
-
     # render email text
     email_html_message = render_to_string('email/password_reset_email.html', context)
     email_plaintext_message = render_to_string('email/password_reset_email.txt', context)
