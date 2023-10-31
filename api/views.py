@@ -23,10 +23,11 @@ def passwordReset(request, token):
         #test print
         print(data['password'])
         print(data['token'])
+        print(reset_password_url)
         try:
             response = requests.post(reset_password_url, json=data)
             #test print
-            print(response.status_code)
+            print("Response code : "+response.status_code)
             if response.status_code == 200:
                 #test print
                 print('==============================PASSWORD RESET END 200==============================')
