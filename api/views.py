@@ -27,7 +27,7 @@ def passwordReset(request, token):
         try:
             response = requests.post(reset_password_url, json=data)
             #test print
-            print("Response code : "+response.status_code)
+            print("Response code : "+str(response.status_code))
             if response.status_code == 200:
                 #test print
                 print('==============================PASSWORD RESET END 200==============================')
