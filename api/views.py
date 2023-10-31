@@ -15,20 +15,39 @@ def redirectbase(_):
 
 def passwordReset(request, token):
     if request.method == 'POST':
+        #test print
+        print('==============================PASSWORD RESET START==============================')
         form = PasswordForm(request.POST)
         reset_password_url = "{}://{}/api/password_reset/confirm/".format(request.scheme, request.get_host())
         data = {"password": request.POST.get('password'), "token": token}
+        #test print
+        print(data['password'])
+        print(data['token'])
         try:
             response = requests.post(reset_password_url, json=data)
+            #test print
             print(response.status_code)
             if response.status_code == 200:
+                #test print
+                print('==============================PASSWORD RESET END 200==============================')
                 return render(request, 'api/password_reset_response.html', {'status':200})
+                
             if response.status_code == 400:
                 form.errors['password'] = response.json()['password']
+                #test print
+                print('==============================PASSWORD RESET END 400==============================')
                 return render(request, 'api/password_reset_form.html', {'form': form})
             if response.status_code == 404:
+                #test print
+                print('==============================PASSWORD RESET END 404==============================')
                 return render(request, 'api/password_reset_response.html', {'status':404})
+            
+            #test print
+            print('==============================PASSWORD RESET END UNIDTFD==============================')
+            return render(request, 'api/password_reset_response.html', {'error': 'Something went wrong. Please try again.'})
         except Exception as e:
+            #test print
+            print('==============================PASSWORD RESET ERR=============================='+e)
             return render(request, 'api/password_reset_response.html', {'error':e})
 
     if request.method == 'GET':
