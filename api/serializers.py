@@ -1,10 +1,23 @@
 from rest_framework.serializers   import ModelSerializer
-from .models import Info, Profile, User
+from .models import Info, Profile, User, Group
 
 class InfoSerializer(ModelSerializer):
     class Meta:
         model = Info
         fields = '__all__' 
+
+    def update(self, instance, validated_data):
+        validated_data.pop('createdBy', None) # Exclude the 'createdBy' field from the validated data
+        return super(InfoSerializer, self).update(instance, validated_data)
+    
+class GroupSerializer(ModelSerializer):
+    class Meta:
+        model = Group
+        fields = '__all__' 
+
+    def update(self, instance, validated_data):
+        validated_data.pop('createdBy', None) # Exclude the 'createdBy' field from the validated data
+        return super(GroupSerializer, self).update(instance, validated_data)
 
 class ProfileSerializer(ModelSerializer):
     class Meta:

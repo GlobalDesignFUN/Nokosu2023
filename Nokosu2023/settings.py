@@ -103,7 +103,7 @@ DATABASES = {
     }
 }
 
-DATABASES["default"] = dj_database_url.parse(config('DB'))
+#DATABASES["default"] = dj_database_url.parse(config('DB'))
 
 
 # Password validation
