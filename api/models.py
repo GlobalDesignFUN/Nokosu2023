@@ -11,12 +11,20 @@ class Profile(models.Model):
     def __str__(self):
         return '{}_{}'.format(self.id,self.user.username) if self.user else 'User Not Found'        
 
+class Group(models.Model):
+    name = models.CharField(max_length=100, unique=True) 
+    createdBy = models.ForeignKey(Profile, on_delete=models.CASCADE,null=False)
+    created = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name
+    
 class Info(models.Model):
     topic = models.TextField()
     description = models.TextField()
     created = models.DateTimeField(auto_now_add=True)
     photo = models.ImageField(upload_to='static\img\info', blank=False, null=False)
-    group = models.TextField()
+    group = models.ForeignKey(Group, on_delete=models.CASCADE,null=False)
     createdBy = models.ForeignKey(Profile, on_delete=models.CASCADE,null=False)
     # Category data 
     positive = models.BooleanField()
@@ -34,5 +42,3 @@ class Info(models.Model):
     
     class Meta:
         ordering = ['-created']
-
-

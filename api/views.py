@@ -5,55 +5,13 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.contrib.auth import authenticate
 from django.shortcuts import redirect, render
-from .serializers import InfoSerializer, UserSerializer, ProfileSerializer
-from .models import Info, Profile, User, Default_Profile_Image
+from .serializers import InfoSerializer, UserSerializer, ProfileSerializer, GroupSerializer
+from .models import Info, Profile, User, Group, Default_Profile_Image
 from .forms import PasswordForm
 import requests
 
 def redirectbase(_):
     return redirect(getRoutes)
-
-def passwordReset(request, token):
-    if request.method == 'POST':
-        #test print
-        print('==============================PASSWORD RESET START==============================')
-        form = PasswordForm(request.POST)
-        reset_password_url = "{}://{}/api/password_reset/confirm/".format(request.scheme, request.get_host())
-        data = {"password": request.POST.get('password'), "token": token}
-        #test print
-        print(data['password'])
-        print(data['token'])
-        print(reset_password_url)
-        try:
-            response = requests.post(reset_password_url, json=data)
-            #test print
-            print("Response code : "+str(response.status_code))
-            if response.status_code == 200:
-                #test print
-                print('==============================PASSWORD RESET END 200==============================')
-                return render(request, 'api/password_reset_response.html', {'status':200})
-                
-            if response.status_code == 400:
-                form.errors['password'] = response.json()['password']
-                #test print
-                print('==============================PASSWORD RESET END 400==============================')
-                return render(request, 'api/password_reset_form.html', {'form': form})
-            if response.status_code == 404:
-                #test print
-                print('==============================PASSWORD RESET END 404==============================')
-                return render(request, 'api/password_reset_response.html', {'status':404})
-            
-            #test print
-            print('==============================PASSWORD RESET END UNIDTFD==============================')
-            return render(request, 'api/password_reset_response.html', {'error': 'Something went wrong. Please try again.'})
-        except Exception as e:
-            #test print
-            print('==============================PASSWORD RESET ERR=============================='+e)
-            return render(request, 'api/password_reset_response.html', {'error':e})
-
-    if request.method == 'GET':
-        form = PasswordForm(initial={'token': token})
-        return render(request, 'api/password_reset_form.html', {'form': form})
 
 @api_view(['GET'])
 def getRoutes(_):
@@ -89,6 +47,35 @@ def getRoutes(_):
                             'Description' : 'Delete an Info object with given id',
                             'Method' : 'DELETE',
                             'URL' : '/api/infos/0',
+                        },
+                    ]
+                },
+                {
+                    'Group':[
+                        {
+                            'Description' : 'Get a List of all Group objects',
+                            'Method' : 'GET',
+                            'URL' : '/api/groups/',
+                        },
+                        {
+                            'Description' : 'Create a Group object',
+                            'Method' : 'POST',
+                            'URL' : '/api/groups/',
+                        },
+                        {
+                            'Description' : 'Get all Info objects in a Group with given id',
+                            'Method' : 'GET',
+                            'URL' : '/api/groups/0',
+                        },
+                        {
+                            'Description' : 'Update a Group object with given id',
+                            'Method' : 'PUT',
+                            'URL' : '/api/groups/0',
+                        },
+                        {
+                            'Description' : 'Delete a Group object with given id',
+                            'Method' : 'DELETE',
+                            'URL' : '/api/groups/0',
                         },
                     ]
                 },
@@ -164,6 +151,48 @@ def getRoutes(_):
     ]
     return Response(routes)
 
+def passwordReset(request, token):
+    if request.method == 'POST':
+        #test print
+        print('==============================PASSWORD RESET START==============================')
+        form = PasswordForm(request.POST)
+        reset_password_url = "{}://{}/api/password_reset/confirm/".format(request.scheme, request.get_host())
+        data = {"password": request.POST.get('password'), "token": token}
+        #test print
+        print(data['password'])
+        print(data['token'])
+        print(reset_password_url)
+        try:
+            response = requests.post(reset_password_url, json=data)
+            #test print
+            print("Response code : "+str(response.status_code))
+            if response.status_code == 200:
+                #test print
+                print('==============================PASSWORD RESET END 200==============================')
+                return render(request, 'api/password_reset_response.html', {'status':200})
+                
+            if response.status_code == 400:
+                form.errors['password'] = response.json()['password']
+                #test print
+                print('==============================PASSWORD RESET END 400==============================')
+                return render(request, 'api/password_reset_form.html', {'form': form})
+            if response.status_code == 404:
+                #test print
+                print('==============================PASSWORD RESET END 404==============================')
+                return render(request, 'api/password_reset_response.html', {'status':404})
+            
+            #test print
+            print('==============================PASSWORD RESET END UNIDTFD==============================')
+            return render(request, 'api/password_reset_response.html', {'error': 'Something went wrong. Please try again.'})
+        except Exception as e:
+            #test print
+            print('==============================PASSWORD RESET ERR=============================='+e)
+            return render(request, 'api/password_reset_response.html', {'error':e})
+
+    if request.method == 'GET':
+        form = PasswordForm(initial={'token': token})
+        return render(request, 'api/password_reset_form.html', {'form': form})
+
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def registration(request):
@@ -213,11 +242,12 @@ def profile(request, pk):
             profileSerializer_data['user'] = UserSerializer(profile.user, many=False).data
         return Response(profileSerializer_data)
     
-    if not (request.user.is_staff or (Profile.objects.get(user=request.user).id==profile.id)):
+    if not (request.user.is_staff or (Profile.objects.get(user=request.user)==profile)):
         return Response({'detail': 'You do not have permission to perform this action.'}, status=status.HTTP_401_UNAUTHORIZED)
     
     if request.method == 'PUT':
         userSerializer = UserSerializer(profile.user, data=request.data)
+        userSerializer.initial_data._mutable = True
         userSerializer.initial_data['password'] = 'temp' # Ignored by the update() of serializer
         profileSerializer = ProfileSerializer(profile, data={'photo': request.data.get('photo')})
         isProfileValid = profileSerializer.is_valid()
@@ -266,7 +296,7 @@ def logout(request):
 
 @api_view(['GET', 'POST'])
 @permission_classes([IsAuthenticated])
-def InfoList(request):
+def infoList(request):
     if request.method == 'GET':
         infos = Info.objects.all()
         serializer = InfoSerializer(infos, many=True)
@@ -274,6 +304,7 @@ def InfoList(request):
     
     if request.method == 'POST':
         serializer = InfoSerializer(data=request.data)
+        serializer.initial_data._mutable = True
         serializer.initial_data['createdBy'] = Profile.objects.get(user=request.user.id).id
         if serializer.is_valid():
             serializer.save()
@@ -282,7 +313,7 @@ def InfoList(request):
 
 @api_view(['GET', 'PUT', 'DELETE'])
 @permission_classes([IsAuthenticated])
-def InfoItem(request, pk):
+def infoItem(request, pk):
     try:
         info = Info.objects.get(id=pk)
     except:
@@ -291,6 +322,9 @@ def InfoItem(request, pk):
     if request.method == 'GET':
         serializer = InfoSerializer(info, many=False)
         return Response(serializer.data)
+    
+    if not (request.user.is_staff or (Profile.objects.get(user=request.user)==info.createdBy)):
+        return Response({'detail': 'You do not have permission to perform this action.'}, status=status.HTTP_401_UNAUTHORIZED)
     
     if request.method == 'PUT':
         serializer = InfoSerializer(info, data=request.data)
@@ -303,3 +337,50 @@ def InfoItem(request, pk):
         info.photo.delete()
         info.delete()
         return Response({'detail': 'Deleted the info with id:{}'.format(pk)})
+    
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
+def groupList(request):
+    if request.method == 'GET':
+        groups = Group.objects.all()
+        serializer = GroupSerializer(groups, many=True)
+        return Response(serializer.data)
+    
+    if request.method == 'POST':
+        serializer = GroupSerializer(data=request.data)
+        serializer.initial_data._mutable = True
+        serializer.initial_data['createdBy'] = Profile.objects.get(user=request.user.id).id
+        
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET', 'PUT', 'DELETE'])
+@permission_classes([IsAuthenticated])
+def groupItem(request, pk):
+    try:
+        group = Group.objects.get(id=pk)
+    except:
+        return Response({'error':'Invalid Group Id'}, status=status.HTTP_404_NOT_FOUND)
+    
+    if request.method == 'GET':
+        infos = Info.objects.filter(group=group)
+        serializer = InfoSerializer(infos, many=True)
+        return Response(serializer.data)
+    
+    if not (request.user.is_staff or (Profile.objects.get(user=request.user)==group.createdBy)):
+        return Response({'detail': 'You do not have permission to perform this action.'}, status=status.HTTP_401_UNAUTHORIZED)
+    
+    if request.method == 'PUT':
+        serializer = GroupSerializer(group, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    if request.method == 'DELETE':
+        group.delete()
+        return Response({'detail': 'Deleted the group with id:{}'.format(pk)})
+   
