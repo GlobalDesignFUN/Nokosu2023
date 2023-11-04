@@ -246,7 +246,7 @@ def profile(request, pk):
         return Response({'detail': 'You do not have permission to perform this action.'}, status=status.HTTP_401_UNAUTHORIZED)
     
     if request.method == 'PUT':
-        userSerializer = UserSerializer(profile.user, data=request.data)
+        userSerializer = UserSerializer(profile.user, data=request.data, partial=True)
         userSerializer.initial_data._mutable = True
         userSerializer.initial_data['password'] = 'temp' # Ignored by the update() of serializer
         profileSerializer = ProfileSerializer(profile, data={'photo': request.data.get('photo')})
@@ -327,7 +327,7 @@ def infoItem(request, pk):
         return Response({'detail': 'You do not have permission to perform this action.'}, status=status.HTTP_401_UNAUTHORIZED)
     
     if request.method == 'PUT':
-        serializer = InfoSerializer(info, data=request.data)
+        serializer = InfoSerializer(info, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
@@ -374,7 +374,7 @@ def groupItem(request, pk):
         return Response({'detail': 'You do not have permission to perform this action.'}, status=status.HTTP_401_UNAUTHORIZED)
     
     if request.method == 'PUT':
-        serializer = GroupSerializer(group, data=request.data)
+        serializer = GroupSerializer(group, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
