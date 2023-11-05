@@ -17,7 +17,8 @@ def redirectbase(_):
 def getRoutes(_):
     routes = [
         {
-            'Global Design 2023' : 'Welcome to NOKOSU backend'
+            'Welcome!' : 'NOKOSU Backend',
+            'Developed By' : 'Global Design 2023 Team'
         },
         {
             'API Endpoints' : [
