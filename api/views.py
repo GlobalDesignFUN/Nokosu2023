@@ -5,10 +5,10 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.contrib.auth import authenticate
 from django.shortcuts import redirect, render
+from django_rest_passwordreset.models import ResetPasswordToken
 from .serializers import InfoSerializer, UserSerializer, ProfileSerializer, GroupSerializer
 from .models import Info, Profile, User, Group, Default_Profile_Image
 from .forms import PasswordForm
-import requests
 
 def redirectbase(_):
     return redirect(getRoutes)
@@ -154,45 +154,62 @@ def getRoutes(_):
 
 def passwordReset(request, token):
     if request.method == 'POST':
-        #test print
-        print('==============================PASSWORD RESET START==============================')
-        form = PasswordForm(request.POST)
-        reset_password_url = "{}://{}/api/password_reset/confirm/".format(request.scheme, request.get_host())
-        data = {"password": request.POST.get('password'), "token": token}
-        #test print
-        print(data['password'])
-        print(data['token'])
-        print(reset_password_url)
         try:
-            response = requests.post(reset_password_url, json=data)
-            #test print
-            print("Response code : "+str(response.status_code))
-            if response.status_code == 200:
-                #test print
-                print('==============================PASSWORD RESET END 200==============================')
-                return render(request, 'api/password_reset_response.html', {'status':200})
-                
-            if response.status_code == 400:
-                form.errors['password'] = response.json()['password']
-                #test print
-                print('==============================PASSWORD RESET END 400==============================')
-                return render(request, 'api/password_reset_form.html', {'form': form})
-            if response.status_code == 404:
-                #test print
-                print('==============================PASSWORD RESET END 404==============================')
-                return render(request, 'api/password_reset_response.html', {'status':404})
-            
-            #test print
-            print('==============================PASSWORD RESET END UNIDTFD==============================')
-            return render(request, 'api/password_reset_response.html', {'error': 'Something went wrong. Please try again.'})
-        except Exception as e:
-            #test print
-            print('==============================PASSWORD RESET ERR=============================='+e)
-            return render(request, 'api/password_reset_response.html', {'error':e})
+            form = PasswordForm(request.POST)
 
+            try:
+                reset_token = ResetPasswordToken.objects.get(key=token)
+            except ResetPasswordToken.DoesNotExist:
+                return render(request, 'api/password_reset_response.html', {'status':404})
+
+            if form.is_valid():
+                reset_token.user.set_password(form.cleaned_data['password1'])
+                reset_token.user.save()
+                return render(request, 'api/password_reset_response.html', {'status':200})
+            return render(request, 'api/password_reset_form.html', {'form': form})
+        
+        except Exception as e:
+            return render(request, 'api/password_reset_response.html', {'error':e})
+        
     if request.method == 'GET':
         form = PasswordForm(initial={'token': token})
         return render(request, 'api/password_reset_form.html', {'form': form})
+
+        # #test print
+        # print('==============================PASSWORD RESET START==============================')
+        # form = PasswordForm(request.POST)
+        # reset_password_url = "{}://{}/api/password_reset/confirm/".format(request.scheme, request.get_host())
+        # data = {"password": request.POST.get('password'), "token": token}
+        # #test print
+        # print(data['password'])
+        # print(data['token'])
+        # print(reset_password_url)
+        # try:
+        #     response = requests.post(reset_password_url, json=data)
+        #     #test print
+        #     print("Response code : "+str(response.status_code))
+        #     if response.status_code == 200:
+        #         #test print
+        #         print('==============================PASSWORD RESET END 200==============================')
+        #         return render(request, 'api/password_reset_response.html', {'status':200})
+                
+        #     if response.status_code == 400:
+        #         form.errors['password'] = response.json()['password']
+        #         #test print
+        #         print('==============================PASSWORD RESET END 400==============================')
+        #         return render(request, 'api/password_reset_form.html', {'form': form})
+        #     if response.status_code == 404:
+        #         #test print
+        #         print('==============================PASSWORD RESET END 404==============================')
+        #         return render(request, 'api/password_reset_response.html', {'status':404})
+            
+        #     #test print
+        #     print('==============================PASSWORD RESET END UNIDTFD==============================')
+        #     return render(request, 'api/password_reset_response.html', {'error': 'Something went wrong. Please try again.'})
+        # except Exception as e:
+        #     #test print
+        #     print('==============================PASSWORD RESET ERR=============================='+e)
+        #     return render(request, 'api/password_reset_response.html', {'error':e})
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
