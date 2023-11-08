@@ -5,11 +5,18 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.contrib.auth import authenticate
 from django.shortcuts import redirect, render
+from django.conf import settings
 from django_rest_passwordreset.models import ResetPasswordToken
+from pathlib import Path
 from .serializers import InfoSerializer, UserSerializer, ProfileSerializer, GroupSerializer
 from .models import Info, Profile, User, Group, Default_Profile_Image
 from .forms import PasswordForm, RegistrationAPI
 import json
+import pyrebase
+import os 
+
+firebase = pyrebase.initialize_app(settings.FIREBASECONFIG)
+storage = firebase.storage()
 
 def redirectbase(_):
     return redirect(getRoutes)
@@ -225,9 +232,13 @@ def registration(request):
             if serializer.is_valid():
                 user = serializer.save()
                 token, _ = Token.objects.get_or_create(user=user)
-                profileSerializer = ProfileSerializer(data={'user':user.id, 'photo': request.data.get('photo')})
+                profileSerializer = ProfileSerializer(data={'user':user.id, 'photo': request.data.get('photo'), 'url':''})
                 if profileSerializer.is_valid():
-                    profileSerializer.save()
+                    prof = profileSerializer.save()
+                    storage.child("ProfilePics/" + str(prof.id)).put(profileSerializer.validated_data['photo'])
+                    url = storage.child("ProfilePics/" + str(prof.id)).get_url(None)
+                    prof.url = url
+                    prof.save()
                 else:
                     Profile.objects.create(user=user)
                 profileSerializer_data = ProfileSerializer(Profile.objects.get(user=user.id), many=False).data
@@ -270,14 +281,15 @@ def profile(request, pk):
         userSerializer = UserSerializer(profile.user, data=request.data, partial=True)
         userSerializer.initial_data._mutable = True
         userSerializer.initial_data['password'] = 'temp' # Ignored by the update() of serializer
-        profileSerializer = ProfileSerializer(profile, data={'photo': request.data.get('photo')})
+        profileSerializer = ProfileSerializer(profile, data={'photo': request.data.get('photo'), 'url':''})
         isProfileValid = profileSerializer.is_valid()
         if userSerializer.is_valid():
             userSerializer.save()
             if isProfileValid:
-                profile.photo.delete()
-                profile.photo = profileSerializer.validated_data.get('photo')
-                profile.save()
+                storage.child("ProfilePics/" + str(profile.id)).put(profileSerializer.validated_data['photo'])
+                url = storage.child("ProfilePics/" + str(profile.id)).get_url(None)
+                profileSerializer.validated_data['url'] = url
+                profileSerializer.save()
             profileSerializer_data = ProfileSerializer(profile, many=False).data
             profileSerializer_data['user'] = UserSerializer(profile.user, many=False).data
             profileSerializer_data['errors'] = profileSerializer.errors
@@ -289,8 +301,7 @@ def profile(request, pk):
             profile.user.delete()
         if profile.photo != Default_Profile_Image:
             profile.photo.delete()
-            profile.photo = Default_Profile_Image
-            profile.save()
+            storage.delete("ProfilePics/" + str(profile.id), 'tkn')
         return Response({'detail': 'Deleted successful'})
 
 @api_view(['POST'])
