@@ -8,7 +8,8 @@ from django.shortcuts import redirect, render
 from django_rest_passwordreset.models import ResetPasswordToken
 from .serializers import InfoSerializer, UserSerializer, ProfileSerializer, GroupSerializer
 from .models import Info, Profile, User, Group, Default_Profile_Image
-from .forms import PasswordForm
+from .forms import PasswordForm, RegistrationAPI
+import json
 
 def redirectbase(_):
     return redirect(getRoutes)
@@ -217,23 +218,24 @@ def passwordReset(request, token):
 def registration(request):
     if request.method == 'POST':
         serializer = UserSerializer(data=request.data)
-        if serializer.is_valid():
-            password1 = serializer.validated_data.get('password')
-            password2 = request.data.get('password2')
-            if password1 != password2:
-                return Response({'password2': 'Passwords do not match'})
-            user = serializer.save()
-            token, _ = Token.objects.get_or_create(user=user)
-            profileSerializer = ProfileSerializer(data={'user':user.id, 'photo': request.data.get('photo')})
-            if profileSerializer.is_valid():
-                profileSerializer.save()
-            else:
-                Profile.objects.create(user=user)
-            profileSerializer_data = ProfileSerializer(Profile.objects.get(user=user.id), many=False).data
-            profileSerializer_data['user'] = UserSerializer(user, many=False).data
-            profileSerializer_data['errors'] = profileSerializer.errors
-            return Response({'token': token.key, 'profile':profileSerializer_data})
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        regForm = RegistrationAPI(request.POST)
+        if regForm.is_valid():
+            serializer.initial_data._mutable = True
+            serializer.initial_data['password'] = regForm.cleaned_data['password1']
+            if serializer.is_valid():
+                user = serializer.save()
+                token, _ = Token.objects.get_or_create(user=user)
+                profileSerializer = ProfileSerializer(data={'user':user.id, 'photo': request.data.get('photo')})
+                if profileSerializer.is_valid():
+                    profileSerializer.save()
+                else:
+                    Profile.objects.create(user=user)
+                profileSerializer_data = ProfileSerializer(Profile.objects.get(user=user.id), many=False).data
+                profileSerializer_data['user'] = UserSerializer(user, many=False).data
+                profileSerializer_data['errors'] = profileSerializer.errors
+                return Response({'token': token.key, 'profile':profileSerializer_data})
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response(json.loads(regForm.errors.as_json()), status=status.HTTP_400_BAD_REQUEST)
     
 @api_view(['GET'])
 @permission_classes([IsAdminUser])
