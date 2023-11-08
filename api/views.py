@@ -5,18 +5,14 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.contrib.auth import authenticate
 from django.shortcuts import redirect, render
-from django.conf import settings
 from django_rest_passwordreset.models import ResetPasswordToken
 from pathlib import Path
 from .serializers import InfoSerializer, UserSerializer, ProfileSerializer, GroupSerializer
 from .models import Info, Profile, User, Group, Default_Profile_Image
 from .forms import PasswordForm, RegistrationAPI
+from . import storage
 import json
-import pyrebase
-import os 
 
-firebase = pyrebase.initialize_app(settings.FIREBASECONFIG)
-storage = firebase.storage()
 
 def redirectbase(_):
     return redirect(getRoutes)
@@ -235,9 +231,7 @@ def registration(request):
                 profileSerializer = ProfileSerializer(data={'user':user.id, 'photo': request.data.get('photo'), 'url':''})
                 if profileSerializer.is_valid():
                     prof = profileSerializer.save()
-                    storage.child("ProfilePics/" + str(prof.id)).put(profileSerializer.validated_data['photo'])
-                    url = storage.child("ProfilePics/" + str(prof.id)).get_url(None)
-                    prof.url = url
+                    prof.url = storage.upload("ProfilePics/" + str(prof.id), profileSerializer.validated_data['photo'])
                     prof.save()
                 else:
                     Profile.objects.create(user=user)
@@ -286,9 +280,7 @@ def profile(request, pk):
         if userSerializer.is_valid():
             userSerializer.save()
             if isProfileValid:
-                storage.child("ProfilePics/" + str(profile.id)).put(profileSerializer.validated_data['photo'])
-                url = storage.child("ProfilePics/" + str(profile.id)).get_url(None)
-                profileSerializer.validated_data['url'] = url
+                profileSerializer.validated_data['url'] = storage.upload("ProfilePics/" + str(profile.id), profileSerializer.validated_data['photo'])
                 profileSerializer.save()
             profileSerializer_data = ProfileSerializer(profile, many=False).data
             profileSerializer_data['user'] = UserSerializer(profile.user, many=False).data
@@ -302,7 +294,7 @@ def profile(request, pk):
             profile.user = None
         if profile.photo != Default_Profile_Image:
             profile.photo.delete()
-            storage.delete("ProfilePics/" + str(profile.id), 'tkn')
+            storage.delete("ProfilePics/" + str(profile.id))
             profile.photo = Default_Profile_Image
             profile.url = ""
             profile.save()
@@ -343,7 +335,9 @@ def infoList(request):
         serializer.initial_data._mutable = True
         serializer.initial_data['createdBy'] = Profile.objects.get(user=request.user.id).id
         if serializer.is_valid():
-            serializer.save()
+            info = serializer.save()
+            info.url = serializer.validated_data['url'] = storage.upload("InfoPics/" + str(info.id), serializer.validated_data['photo'])
+            info.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -365,12 +359,14 @@ def infoItem(request, pk):
     if request.method == 'PUT':
         serializer = InfoSerializer(info, data=request.data, partial=True)
         if serializer.is_valid():
+            serializer.validated_data['url'] = storage.upload("InfoPics/" + str(info.id), serializer.validated_data['photo'])
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     if request.method == 'DELETE':
         info.photo.delete()
+        storage.delete("InfoPics/" + str(info.id))
         info.delete()
         return Response({'detail': 'Deleted the info with id:{}'.format(pk)})
     
