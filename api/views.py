@@ -165,6 +165,7 @@ def passwordReset(request, token):
             if form.is_valid():
                 reset_token.user.set_password(form.cleaned_data['password1'])
                 reset_token.user.save()
+                reset_token.delete()
                 return render(request, 'api/password_reset_response.html', {'status':200})
             return render(request, 'api/password_reset_form.html', {'form': form})
         
