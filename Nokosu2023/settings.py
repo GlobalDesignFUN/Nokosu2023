@@ -162,3 +162,14 @@ EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = config('EMAIL_ADD')
 EMAIL_HOST_PASSWORD = config('EMAIL_PW')
+
+FIREBASECONFIG = {
+  "apiKey": config('apiKey'),
+  "authDomain": config('authDomain'),
+  "projectId": config('projectId'),
+  "storageBucket": config('storageBucket'),
+  "messagingSenderId": config('messagingSenderId'),
+  "appId": config('appId'),
+  "measurementId": config('measurementId'),
+  "databaseURL": ""
+}
