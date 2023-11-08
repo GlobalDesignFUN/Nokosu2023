@@ -5,10 +5,14 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.contrib.auth import authenticate
 from django.shortcuts import redirect, render
+from django_rest_passwordreset.models import ResetPasswordToken
+from pathlib import Path
 from .serializers import InfoSerializer, UserSerializer, ProfileSerializer, GroupSerializer
 from .models import Info, Profile, User, Group, Default_Profile_Image
-from .forms import PasswordForm
-import requests
+from .forms import PasswordForm, RegistrationAPI
+from . import storage
+import json
+
 
 def redirectbase(_):
     return redirect(getRoutes)
@@ -17,7 +21,8 @@ def redirectbase(_):
 def getRoutes(_):
     routes = [
         {
-            'Global Design 2023' : 'Welcome to NOKOSU backend'
+            'Welcome!' : 'NOKOSU Backend',
+            'Developed By' : 'Global Design 2023 Team'
         },
         {
             'API Endpoints' : [
@@ -153,68 +158,89 @@ def getRoutes(_):
 
 def passwordReset(request, token):
     if request.method == 'POST':
-        #test print
-        print('==============================PASSWORD RESET START==============================')
-        form = PasswordForm(request.POST)
-        reset_password_url = "{}://{}/api/password_reset/confirm/".format(request.scheme, request.get_host())
-        data = {"password": request.POST.get('password'), "token": token}
-        #test print
-        print(data['password'])
-        print(data['token'])
-        print(reset_password_url)
         try:
-            response = requests.post(reset_password_url, json=data)
-            #test print
-            print("Response code : "+str(response.status_code))
-            if response.status_code == 200:
-                #test print
-                print('==============================PASSWORD RESET END 200==============================')
-                return render(request, 'api/password_reset_response.html', {'status':200})
-                
-            if response.status_code == 400:
-                form.errors['password'] = response.json()['password']
-                #test print
-                print('==============================PASSWORD RESET END 400==============================')
-                return render(request, 'api/password_reset_form.html', {'form': form})
-            if response.status_code == 404:
-                #test print
-                print('==============================PASSWORD RESET END 404==============================')
-                return render(request, 'api/password_reset_response.html', {'status':404})
-            
-            #test print
-            print('==============================PASSWORD RESET END UNIDTFD==============================')
-            return render(request, 'api/password_reset_response.html', {'error': 'Something went wrong. Please try again.'})
-        except Exception as e:
-            #test print
-            print('==============================PASSWORD RESET ERR=============================='+e)
-            return render(request, 'api/password_reset_response.html', {'error':e})
+            form = PasswordForm(request.POST)
 
+            try:
+                reset_token = ResetPasswordToken.objects.get(key=token)
+            except ResetPasswordToken.DoesNotExist:
+                return render(request, 'api/password_reset_response.html', {'status':404})
+
+            if form.is_valid():
+                reset_token.user.set_password(form.cleaned_data['password1'])
+                reset_token.user.save()
+                reset_token.delete()
+                return render(request, 'api/password_reset_response.html', {'status':200})
+            return render(request, 'api/password_reset_form.html', {'form': form})
+        
+        except Exception as e:
+            return render(request, 'api/password_reset_response.html', {'error':e})
+        
     if request.method == 'GET':
         form = PasswordForm(initial={'token': token})
         return render(request, 'api/password_reset_form.html', {'form': form})
+
+        # #test print
+        # print('==============================PASSWORD RESET START==============================')
+        # form = PasswordForm(request.POST)
+        # reset_password_url = "{}://{}/api/password_reset/confirm/".format(request.scheme, request.get_host())
+        # data = {"password": request.POST.get('password'), "token": token}
+        # #test print
+        # print(data['password'])
+        # print(data['token'])
+        # print(reset_password_url)
+        # try:
+        #     response = requests.post(reset_password_url, json=data)
+        #     #test print
+        #     print("Response code : "+str(response.status_code))
+        #     if response.status_code == 200:
+        #         #test print
+        #         print('==============================PASSWORD RESET END 200==============================')
+        #         return render(request, 'api/password_reset_response.html', {'status':200})
+                
+        #     if response.status_code == 400:
+        #         form.errors['password'] = response.json()['password']
+        #         #test print
+        #         print('==============================PASSWORD RESET END 400==============================')
+        #         return render(request, 'api/password_reset_form.html', {'form': form})
+        #     if response.status_code == 404:
+        #         #test print
+        #         print('==============================PASSWORD RESET END 404==============================')
+        #         return render(request, 'api/password_reset_response.html', {'status':404})
+            
+        #     #test print
+        #     print('==============================PASSWORD RESET END UNIDTFD==============================')
+        #     return render(request, 'api/password_reset_response.html', {'error': 'Something went wrong. Please try again.'})
+        # except Exception as e:
+        #     #test print
+        #     print('==============================PASSWORD RESET ERR=============================='+e)
+        #     return render(request, 'api/password_reset_response.html', {'error':e})
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def registration(request):
     if request.method == 'POST':
         serializer = UserSerializer(data=request.data)
-        if serializer.is_valid():
-            password1 = serializer.validated_data.get('password')
-            password2 = request.data.get('password2')
-            if password1 != password2:
-                return Response({'password2': 'Passwords do not match'})
-            user = serializer.save()
-            token, _ = Token.objects.get_or_create(user=user)
-            profileSerializer = ProfileSerializer(data={'user':user.id, 'photo': request.data.get('photo')})
-            if profileSerializer.is_valid():
-                profileSerializer.save()
-            else:
-                Profile.objects.create(user=user)
-            profileSerializer_data = ProfileSerializer(Profile.objects.get(user=user.id), many=False).data
-            profileSerializer_data['user'] = UserSerializer(user, many=False).data
-            profileSerializer_data['errors'] = profileSerializer.errors
-            return Response({'token': token.key, 'profile':profileSerializer_data})
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        regForm = RegistrationAPI(request.POST)
+        if regForm.is_valid():
+            serializer.initial_data._mutable = True
+            serializer.initial_data['password'] = regForm.cleaned_data['password1']
+            if serializer.is_valid():
+                user = serializer.save()
+                token, _ = Token.objects.get_or_create(user=user)
+                profileSerializer = ProfileSerializer(data={'user':user.id, 'photo': request.data.get('photo'), 'url':''})
+                if profileSerializer.is_valid():
+                    prof = profileSerializer.save()
+                    prof.url = storage.upload("ProfilePics/" + str(prof.id), profileSerializer.validated_data['photo'])
+                    prof.save()
+                else:
+                    Profile.objects.create(user=user)
+                profileSerializer_data = ProfileSerializer(Profile.objects.get(user=user.id), many=False).data
+                profileSerializer_data['user'] = UserSerializer(user, many=False).data
+                profileSerializer_data['errors'] = profileSerializer.errors
+                return Response({'token': token.key, 'profile':profileSerializer_data})
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response(json.loads(regForm.errors.as_json()), status=status.HTTP_400_BAD_REQUEST)
     
 @api_view(['GET'])
 @permission_classes([IsAdminUser])
@@ -246,17 +272,16 @@ def profile(request, pk):
         return Response({'detail': 'You do not have permission to perform this action.'}, status=status.HTTP_401_UNAUTHORIZED)
     
     if request.method == 'PUT':
-        userSerializer = UserSerializer(profile.user, data=request.data)
+        userSerializer = UserSerializer(profile.user, data=request.data, partial=True)
         userSerializer.initial_data._mutable = True
         userSerializer.initial_data['password'] = 'temp' # Ignored by the update() of serializer
-        profileSerializer = ProfileSerializer(profile, data={'photo': request.data.get('photo')})
+        profileSerializer = ProfileSerializer(profile, data={'photo': request.data.get('photo'), 'url':''})
         isProfileValid = profileSerializer.is_valid()
         if userSerializer.is_valid():
             userSerializer.save()
             if isProfileValid:
-                profile.photo.delete()
-                profile.photo = profileSerializer.validated_data.get('photo')
-                profile.save()
+                profileSerializer.validated_data['url'] = storage.upload("ProfilePics/" + str(profile.id), profileSerializer.validated_data['photo'])
+                profileSerializer.save()
             profileSerializer_data = ProfileSerializer(profile, many=False).data
             profileSerializer_data['user'] = UserSerializer(profile.user, many=False).data
             profileSerializer_data['errors'] = profileSerializer.errors
@@ -266,9 +291,12 @@ def profile(request, pk):
     if request.method == 'DELETE':
         if profile.user:
             profile.user.delete()
+            profile.user = None
         if profile.photo != Default_Profile_Image:
             profile.photo.delete()
+            storage.delete("ProfilePics/" + str(profile.id))
             profile.photo = Default_Profile_Image
+            profile.url = ""
             profile.save()
         return Response({'detail': 'Deleted successful'})
 
@@ -307,7 +335,9 @@ def infoList(request):
         serializer.initial_data._mutable = True
         serializer.initial_data['createdBy'] = Profile.objects.get(user=request.user.id).id
         if serializer.is_valid():
-            serializer.save()
+            info = serializer.save()
+            info.url = serializer.validated_data['url'] = storage.upload("InfoPics/" + str(info.id), serializer.validated_data['photo'])
+            info.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -327,14 +357,16 @@ def infoItem(request, pk):
         return Response({'detail': 'You do not have permission to perform this action.'}, status=status.HTTP_401_UNAUTHORIZED)
     
     if request.method == 'PUT':
-        serializer = InfoSerializer(info, data=request.data)
+        serializer = InfoSerializer(info, data=request.data, partial=True)
         if serializer.is_valid():
+            serializer.validated_data['url'] = storage.upload("InfoPics/" + str(info.id), serializer.validated_data['photo'])
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     if request.method == 'DELETE':
         info.photo.delete()
+        storage.delete("InfoPics/" + str(info.id))
         info.delete()
         return Response({'detail': 'Deleted the info with id:{}'.format(pk)})
     
@@ -374,7 +406,7 @@ def groupItem(request, pk):
         return Response({'detail': 'You do not have permission to perform this action.'}, status=status.HTTP_401_UNAUTHORIZED)
     
     if request.method == 'PUT':
-        serializer = GroupSerializer(group, data=request.data)
+        serializer = GroupSerializer(group, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
