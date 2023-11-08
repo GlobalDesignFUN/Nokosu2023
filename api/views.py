@@ -299,9 +299,13 @@ def profile(request, pk):
     if request.method == 'DELETE':
         if profile.user:
             profile.user.delete()
+            profile.user = None
         if profile.photo != Default_Profile_Image:
             profile.photo.delete()
             storage.delete("ProfilePics/" + str(profile.id), 'tkn')
+            profile.photo = Default_Profile_Image
+            profile.url = ""
+            profile.save()
         return Response({'detail': 'Deleted successful'})
 
 @api_view(['POST'])
