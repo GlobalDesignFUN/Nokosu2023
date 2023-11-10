@@ -359,7 +359,8 @@ def infoItem(request, pk):
     if request.method == 'PUT':
         serializer = InfoSerializer(info, data=request.data, partial=True)
         if serializer.is_valid():
-            serializer.validated_data['url'] = storage.upload("InfoPics/" + str(info.id), serializer.validated_data['photo'])
+            if 'photo' in serializer.validated_data:
+                serializer.validated_data['url'] = storage.upload("InfoPics/" + str(info.id), serializer.validated_data['photo'])
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
