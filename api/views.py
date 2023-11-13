@@ -26,32 +26,46 @@ def getRoutes(_):
         },
         {
             'API Endpoints' : [
-                {
-                    'Info':[
+                  {
+                    'User':[
                         {
-                            'Description' : 'Get a List of all Info objects',
-                            'Method' : 'GET',
-                            'URL' : '/api/infos/',
-                        },
-                        {
-                            'Description' : 'Create an Info object',
+                            'Description' : 'Create a User Profile and return access token',
                             'Method' : 'POST',
-                            'URL' : '/api/infos/',
+                            'URL' : '/api/users/register/',
                         },
                         {
-                            'Description' : 'Get a single Info object with given id',
+                            'Description' : 'Return access token',
+                            'Method' : 'POST',
+                            'URL' : '/api/users/login/',
+                        },
+                        {
+                            'Description' : 'Delete access token',
+                            'Method' : 'POST',
+                            'URL' : '/api/users/logout/',
+                        },
+                    ]
+                },
+                {
+                    'Profile':[
+                        {
+                            'Description' : 'Get a List of all User Profile objects',
                             'Method' : 'GET',
-                            'URL' : '/api/infos/0/',
+                            'URL' : '/api/profiles/',
                         },
                         {
-                            'Description' : 'Update an Info object with given id',
+                            'Description' : 'Get a single User Profile object with given id',
+                            'Method' : 'GET',
+                            'URL' : '/api/profiles/0/',
+                        },
+                        {
+                            'Description' : 'Update a User Profile object with given id',
                             'Method' : 'PUT',
-                            'URL' : '/api/infos/0/',
+                            'URL' : '/api/profiles/0/',
                         },
                         {
-                            'Description' : 'Delete an Info object with given id',
+                            'Description' : 'Delete a User object with given id',
                             'Method' : 'DELETE',
-                            'URL' : '/api/infos/0/',
+                            'URL' : '/api/profiles/0/',
                         },
                     ]
                 },
@@ -85,45 +99,31 @@ def getRoutes(_):
                     ]
                 },
                 {
-                    'Profile':[
+                    'Info':[
                         {
-                            'Description' : 'Get a List of all User Profile objects',
+                            'Description' : 'Get a List of all Info objects',
                             'Method' : 'GET',
-                            'URL' : '/api/profiles/',
+                            'URL' : '/api/infos/',
                         },
                         {
-                            'Description' : 'Get a single User Profile object with given id',
-                            'Method' : 'GET',
-                            'URL' : '/api/profiles/0/',
+                            'Description' : 'Create an Info object',
+                            'Method' : 'POST',
+                            'URL' : '/api/infos/',
                         },
                         {
-                            'Description' : 'Update a User Profile object with given id',
+                            'Description' : 'Get a single Info object with given id',
+                            'Method' : 'GET',
+                            'URL' : '/api/infos/0/',
+                        },
+                        {
+                            'Description' : 'Update an Info object with given id',
                             'Method' : 'PUT',
-                            'URL' : '/api/profiles/0/',
+                            'URL' : '/api/infos/0/',
                         },
                         {
-                            'Description' : 'Delete a User object with given id',
+                            'Description' : 'Delete an Info object with given id',
                             'Method' : 'DELETE',
-                            'URL' : '/api/profiles/0/',
-                        },
-                    ]
-                },
-                {
-                    'User':[
-                        {
-                            'Description' : 'Create a User Profile and return access token',
-                            'Method' : 'POST',
-                            'URL' : '/api/users/register/',
-                        },
-                        {
-                            'Description' : 'Return access token',
-                            'Method' : 'POST',
-                            'URL' : '/api/users/login/',
-                        },
-                        {
-                            'Description' : 'Delete access token',
-                            'Method' : 'POST',
-                            'URL' : '/api/users/logout/',
+                            'URL' : '/api/infos/0/',
                         },
                     ]
                 },
