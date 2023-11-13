@@ -128,7 +128,7 @@ def getRoutes(_):
                     ]
                 },
                 {
-                    'email':[
+                    'Password':[
                         {
                             'Description' : 'Getting a password reset email with the token',
                             'Method' : 'POST',
