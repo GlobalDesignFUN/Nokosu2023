@@ -41,17 +41,17 @@ def getRoutes(_):
                         {
                             'Description' : 'Get a single Info object with given id',
                             'Method' : 'GET',
-                            'URL' : '/api/infos/0',
+                            'URL' : '/api/infos/0/',
                         },
                         {
                             'Description' : 'Update an Info object with given id',
                             'Method' : 'PUT',
-                            'URL' : '/api/infos/0',
+                            'URL' : '/api/infos/0/',
                         },
                         {
                             'Description' : 'Delete an Info object with given id',
                             'Method' : 'DELETE',
-                            'URL' : '/api/infos/0',
+                            'URL' : '/api/infos/0/',
                         },
                     ]
                 },
@@ -70,17 +70,17 @@ def getRoutes(_):
                         {
                             'Description' : 'Get all Info objects in a Group with given id',
                             'Method' : 'GET',
-                            'URL' : '/api/groups/0',
+                            'URL' : '/api/groups/0/',
                         },
                         {
                             'Description' : 'Update a Group object with given id',
                             'Method' : 'PUT',
-                            'URL' : '/api/groups/0',
+                            'URL' : '/api/groups/0/',
                         },
                         {
                             'Description' : 'Delete a Group object with given id',
                             'Method' : 'DELETE',
-                            'URL' : '/api/groups/0',
+                            'URL' : '/api/groups/0/',
                         },
                     ]
                 },
@@ -94,17 +94,17 @@ def getRoutes(_):
                         {
                             'Description' : 'Get a single User Profile object with given id',
                             'Method' : 'GET',
-                            'URL' : '/api/profiles/0',
+                            'URL' : '/api/profiles/0/',
                         },
                         {
                             'Description' : 'Update a User Profile object with given id',
                             'Method' : 'PUT',
-                            'URL' : '/api/profiles/0',
+                            'URL' : '/api/profiles/0/',
                         },
                         {
                             'Description' : 'Delete a User object with given id',
                             'Method' : 'DELETE',
-                            'URL' : '/api/profiles/0',
+                            'URL' : '/api/profiles/0/',
                         },
                     ]
                 },
@@ -118,12 +118,12 @@ def getRoutes(_):
                         {
                             'Description' : 'Return access token',
                             'Method' : 'POST',
-                            'URL' : '/api/users/login',
+                            'URL' : '/api/users/login/',
                         },
                         {
                             'Description' : 'Delete access token',
                             'Method' : 'POST',
-                            'URL' : '/api/users/logout',
+                            'URL' : '/api/users/logout/',
                         },
                     ]
                 },
