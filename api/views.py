@@ -6,7 +6,7 @@ from rest_framework import status
 from django.contrib.auth import authenticate
 from django.shortcuts import redirect, render
 from django_rest_passwordreset.models import ResetPasswordToken
-from pathlib import Path
+from datetime import datetime
 from .serializers import InfoSerializer, UserSerializer, ProfileSerializer, GroupSerializer
 from .models import Info, Profile, User, Group, Default_Profile_Image
 from .forms import PasswordForm, RegistrationAPI
@@ -226,6 +226,7 @@ def registration(request):
             serializer.initial_data._mutable = True
             serializer.initial_data['password'] = regForm.cleaned_data['password1']
             if serializer.is_valid():
+                user.last_login = datetime.now()
                 user = serializer.save()
                 token, _ = Token.objects.get_or_create(user=user)
                 profileSerializer = ProfileSerializer(data={'user':user.id, 'photo': request.data.get('photo'), 'url':''})
@@ -307,6 +308,8 @@ def login(request):
         username = request.data.get('username')
         password = request.data.get('password')
         user = authenticate(username=username, password=password)
+        user.last_login = datetime.now()
+        user.save()
         if user:
             token, _ = Token.objects.get_or_create(user=user)
             profileSerializer_data = ProfileSerializer(Profile.objects.get(user=user.id), many=False).data

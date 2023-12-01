@@ -60,16 +60,7 @@ class UserSerializer(ModelSerializer):
             user.first_name = validated_data['first_name']
         if 'last_name' in validated_data:
             user.last_name = validated_data['last_name']
-        if 'is_active' in validated_data:
-            user.is_active = validated_data['is_active']
-        if 'is_staff' in validated_data:
-            user.is_staff = validated_data['is_staff']
-        if 'is_superuser' in validated_data:
-            user.is_superuser = validated_data['is_superuser']
-        if 'last_login' in validated_data:
-            user.last_login = validated_data['last_login']
         
         user.save()
         return user
-
     
