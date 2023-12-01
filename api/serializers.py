@@ -66,8 +66,6 @@ class UserSerializer(ModelSerializer):
             user.is_staff = validated_data['is_staff']
         if 'is_superuser' in validated_data:
             user.is_superuser = validated_data['is_superuser']
-        if 'date_joined' in validated_data:
-            user.date_joined = validated_data['date_joined']
         if 'last_login' in validated_data:
             user.last_login = validated_data['last_login']
         
