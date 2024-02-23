@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.core.validators import MaxValueValidator, MinValueValidator
 
 Default_Profile_Image = 'static\img\profile_pics\default.png'
 
@@ -29,10 +30,11 @@ class Info(models.Model):
     group = models.ForeignKey(Group, on_delete=models.CASCADE,null=False)
     createdBy = models.ForeignKey(Profile, on_delete=models.CASCADE,null=False)
     # Category data 
-    positive = models.BooleanField()
-    emotion = models.BooleanField()
-    cultural = models.BooleanField()
-    physical = models.BooleanField()
+    positive = models.IntegerField(validators=[MinValueValidator(-10), MaxValueValidator(10)])
+    emotion = models.IntegerField(validators=[MinValueValidator(-10), MaxValueValidator(10)])
+    cultural = models.IntegerField(validators=[MinValueValidator(-10), MaxValueValidator(10)])
+    physical = models.IntegerField(validators=[MinValueValidator(-10), MaxValueValidator(10)])
+    tags = models.TextField(blank=True)
     # Location data
     location = models.CharField(max_length=100)
     latitude = models.FloatField()

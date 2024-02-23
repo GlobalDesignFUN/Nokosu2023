@@ -11,12 +11,25 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
 import os
-import dj_database_url
 from decouple import config
+import pyrebase
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+FIREBASECONFIG = {
+  "apiKey": config('apiKey'),
+  "authDomain": config('authDomain'),
+  "databaseURL": config('databaseURL'),
+  "projectId": config('projectId'),
+  "storageBucket": config('storageBucket'),
+  "messagingSenderId": config('messagingSenderId'),
+  "appId": config('appId'),
+  "measurementId": config('measurementId')
+}
+
+firebase = pyrebase.initialize_app(FIREBASECONFIG)
+storage = firebase.storage()
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
@@ -103,7 +116,7 @@ DATABASES = {
     }
 }
 
-DATABASES["default"] = dj_database_url.parse(config('DB'))
+# DATABASES["default"] = dj_database_url.parse(config('DB'))
 
 
 # Password validation
@@ -162,14 +175,3 @@ EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = config('EMAIL_ADD')
 EMAIL_HOST_PASSWORD = config('EMAIL_PW')
-
-FIREBASECONFIG = {
-  "apiKey": config('apiKey'),
-  "authDomain": config('authDomain'),
-  "projectId": config('projectId'),
-  "storageBucket": config('storageBucket'),
-  "messagingSenderId": config('messagingSenderId'),
-  "appId": config('appId'),
-  "measurementId": config('measurementId'),
-  "databaseURL": ""
-}
